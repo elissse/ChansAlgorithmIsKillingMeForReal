@@ -2,170 +2,158 @@ package org.example;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.IntStream;
 
 import static java.lang.Math.*;
 
 public class Main {
+    public static int LEFT_TURN = 1;
+    public static int RIGHT_TURN = -1;
+    public static int COLLINEAR = 0;
 
+    public static class Point {
+        public Integer x;
+        public Integer y;
+
+        Point(Integer x, Integer y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public String toString() {
+            return x + " " + y;
+        }
+    }
 
     public static void main(String[] args) {
-        Integer[][] points = {{1, 1}, {3, 1}, {3, 3}, {1, 2}, {4, 3}, {-1, 2}, {0, -3}, {-3, 2}};
-        List<List<Integer>> miniHulls = chan(points);
-        List<Integer> jarvsosos = jarviss(points, miniHulls);
-        for (Integer x : jarvsosos) System.out.println(x);
+        BruteForceCollinearPoints bfcl = new BruteForceCollinearPoints();
+        List<Point> points = bfcl.generatePoints();
+        System.out.println(points.size());
+        for (Point point : points) System.out.println(point);
+        List<Integer> hull = graham(points, 0, points.size() - 1);
+        for (Integer x : hull) System.out.println(x);
     }
 
-    public static List<List<Integer>> chan(Integer[][] points) {
-        int n = points.length;
-//        for (int t = 1; t < n; t++) {
-        List<List<Integer>> miniHulls = new ArrayList<>();
-        int m = 4;
-        int r = (int) ceil(n / m);
-        for (int i = 0; i < r; i++) {
-            int start = i * m;
-            int end = start + m - 1;
-            miniHulls.add(graham(points, start, end));
+    public static List<Integer> figureOutStartAndEnd(List<Point> points, int i, int m, int r) {
+        int start, end;
+        if (i != r - 1) {
+            start = i * m;
+            end = start + m - 1;
+        } else {
+            end = points.size() - 1;
+            start = end - m + 1;
         }
-//        }
-        for (List<Integer> list : miniHulls) {
-            for (Integer p : list) {
-                System.out.print(p + " ");
+        return graham(points, start, end);
+    }
+
+    public static List<Integer> chans(List<Point> points) {
+        int n = points.size();
+        List<Integer> hull = new ArrayList<>();
+        for (int t = 1; t < n; t++) {
+            List<List<Integer>> miniHulls = new ArrayList<>();
+            int m = min((int) pow(2, pow(2, t)), n);
+            if (m < n) {
+                int r = (int) ceil(n / m);
+                for (int i = 0; i < r; i++) {
+                    miniHulls.add(figureOutStartAndEnd(points, i, m, r));
+                }
+                hull = jarvisMarch(points, miniHulls, m);
+                if (hull.get(0).equals(hull.get(hull.size() - 1))) {
+                    hull.remove(hull.size() - 1);
+                    break;
+                }
+            } else {
+                hull = graham(points, 0, points.size() - 1);
             }
-            System.out.println();
         }
-        return miniHulls;
+        return hull;
     }
 
-    public static List<Integer> jarvisss(Integer[][] points, List<List<Integer>> miniHulls) {
+    public static int mod(int x, int n) {
+        int r = x % n;
+        return (r >= 0) ? r : r + n;
+    }
+
+    public static int tangent(int p, List<Point> points, List<Integer> miniHull) {
+        int l = 0;
+        int r = miniHull.size() - 1;//is -1 needed here
+        int lBefore = orient(points.get(p), points.get(miniHull.get(0)), points.get(miniHull.get(miniHull.size() - 1)));
+        int lAfter = orient(points.get(p), points.get(miniHull.get(0)), points.get(miniHull.get((l + 1) % miniHull.size())));
+        while (l < r) {
+            int c = (l + r) / 2;
+            int cBefore = orient(points.get(p), points.get(miniHull.get(c)), points.get(miniHull.get(mod(c - 1, miniHull.size()))));
+            int cAfter = orient(points.get(p), points.get(miniHull.get(c)), points.get(miniHull.get((c + 1) % miniHull.size())));
+            int cSide = orient(points.get(p), points.get(miniHull.get(l)), points.get(miniHull.get(c)));
+            if (cBefore != RIGHT_TURN && cAfter != RIGHT_TURN) return c;
+            else if (((cSide == LEFT_TURN) && (lAfter == RIGHT_TURN || lBefore == lAfter)) || (cSide == RIGHT_TURN && cBefore == RIGHT_TURN)) {
+                r = c;
+            } else {
+                l = c + 1;
+            }
+            lBefore = -cAfter;
+            lAfter = orient(points.get(p), points.get(miniHull.get(l)), points.get(miniHull.get((l + 1) % miniHull.size())));
+        }
+        return l;
+    }
+
+
+    public static List<Integer> jarvisMarch(List<Point> points, List<List<Integer>> miniHulls, int m) {
+        List<Integer> hull = new ArrayList<>();
         int leftessst = miniHulls.get(0).get(0);
         int whichHull = 0;
+        int index = 0;
         for (int i = 1; i < miniHulls.size(); i++) {
-            if (points[leftessst][0] > points[miniHulls.get(i).get(0)][0]) {
-                leftessst = miniHulls.get(i).get(0);
-                whichHull = i;
-            }
-
+            for (int j = 0; j < miniHulls.get(i).size(); j++)
+                if (points.get(leftessst).x < points.get(miniHulls.get(i).get(j)).x) {
+                    leftessst = miniHulls.get(i).get(j);
+                    whichHull = i;
+                    index = j;
+                }
         }
-        List<Integer> hull = new ArrayList<>();
         hull.add(leftessst);
-        miniHulls.get(whichHull).remove(0);
+        miniHulls.get(whichHull).remove(index);
         miniHulls.get(whichHull).add(hull.get(0));
-        while (true) {
+        for (int k = 0; k < m; k++) {
             Integer[] leftmost = new Integer[miniHulls.size()];
+            Integer[] indexes = new Integer[miniHulls.size()];
             for (int h = 0; h < miniHulls.size(); h++) {
-                leftmost[h] = 0;
-                for (int i = 0; i < miniHulls.get(h).size(); i++) {
-                    if (rotate(points[hull.get(hull.size() - 1)], points[miniHulls.get(h).get(leftmost[h])], points[miniHulls.get(h).get(i)]) > 0) {
-                        leftmost[h] = i;
-                    }
+                if (!miniHulls.get(h).isEmpty()) {
+                    indexes[h] = tangent(hull.get(hull.size() - 1), points, miniHulls.get(h));
+                    leftmost[h] = miniHulls.get(h).get(indexes[h]);
                 }
             }
-            for(Integer x:leftmost) System.out.println(x);
-            leftessst = 0;
-            for (int h = 0; h < miniHulls.size(); h++) {
-                if (rotate(points[hull.get(hull.size() - 1)], points[leftmost[leftessst]], points[leftmost[h]]) > 0) {
-                    leftessst = leftmost[h];
-                    whichHull = h;
+            leftessst = leftmost[0];
+            whichHull = 0;
+            index = indexes[0];
+
+            for (int i = 1; i < leftmost.length; i++) {
+                if (orient(points.get(hull.get(hull.size() - 1)), points.get(leftessst), points.get(leftmost[i])) < 0) {
+                    leftessst = leftmost[i];
+                    whichHull = i;
+                    index = indexes[i];
                 }
             }
-            System.out.println(leftessst + " " + whichHull);
-            if (miniHulls.get(whichHull).get(leftmost[leftessst]) == hull.get(0)) {
+            if (miniHulls.get(whichHull).get(index).equals(hull.get(0))) {
+                hull.add(hull.get(0));
                 break;
             } else {
-                hull.add(miniHulls.get(whichHull).get(leftmost[leftessst]));
-                miniHulls.get(whichHull).remove(leftmost[leftessst]);
+                hull.add(leftessst);
+                miniHulls.get(whichHull).remove(index);
             }
         }
         return hull;
     }
 
-    public static List<Integer> jarvis(Integer[][] points, List<List<Integer>> miniHulls) {
-        List<Integer> p = new ArrayList<>();
-        for (List<Integer> list : miniHulls) {
-            for (Integer i : list)
-                p.add(i);
-        }
-        for (int i = 0; i < p.size(); i++) {
-            if (points[p.get(i)][0] < points[p.get(0)][0]) {
-                Integer t = p.get(i);
-                p.set(i, p.get(0));
-                p.set(0, t);
-            }
-        }
-        List<Integer> hull = new ArrayList<>();
-        hull.add(p.get(0));
-        p.remove(0);
-        p.add(hull.get(0));
-        while (true) {
-            int leftmost = 0;
-            for (int i = 1; i < p.size(); i++) {
-                if (rotate(points[hull.get(hull.size() - 1)], points[p.get(leftmost)], points[p.get(i)]) > 0) {
-                    leftmost = i;
-                }
-            }
-            if (p.get(leftmost) == (hull.get(0))) {
-                break;
-            } else {
-                hull.add(p.get(leftmost));
-                p.remove(leftmost);
-            }
-        }
-        return hull;
+    public static int compare(Integer leftmost, List<Point> points, Integer i, Integer j) {
+        int orientation = orient(points.get(leftmost), points.get(i), points.get(j));
+        return orientation;
     }
 
-    public static List<Integer> jarviss(Integer[][] points, List<List<Integer>> miniHulls) {
-        int leftessst = miniHulls.get(0).get(0);
-        int whichHull = 0;
-        for (int i = 1; i < miniHulls.size(); i++) {
-            if (points[leftessst][0] > points[miniHulls.get(i).get(0)][0]) {
-                leftessst = miniHulls.get(i).get(0);
-                whichHull = i;
-            }
-        }
-        List<Integer> p = new ArrayList<>();
-        for (List<Integer> list : miniHulls) {
-            for (Integer i : list)
-                p.add(i);
-        }
-        for (int i = 0; i < p.size(); i++) {
-            if (points[p.get(i)][0] < points[p.get(0)][0]) {
-                Integer t = p.get(i);
-                p.set(i, p.get(0));
-                p.set(0, t);
-            }
-        }
-        List<Integer> hull = new ArrayList<>();
-        hull.add(p.get(0));
-        p.remove(0);
-        p.add(hull.get(0));
-        while (true) {
-            int leftmost = 0;
-            for (int i = 1; i < p.size(); i++) {
-                if (rotate(points[hull.get(hull.size() - 1)], points[p.get(leftmost)], points[p.get(i)]) > 0) {
-                    leftmost = i;
-                }
-            }
-            if (p.get(leftmost) == (hull.get(0))) {
-                break;
-            } else {
-                hull.add(p.get(leftmost));
-                p.remove(leftmost);
-            }
-        }
-        return hull;
-    }
-
-    public static boolean compare(Integer leftmost, Integer[][] points, Integer i, Integer j) {
-        return rotate(points[leftmost], points[i], points[j]) > 0;
-    }
-
-    public static void merge(Integer leftmost, Integer[][] points, Integer[] p, Integer[] l, Integer[] r, Integer left, Integer right) {
+    public static void merge(Integer leftmost, List<Point> points, Integer[] p, Integer[] l, Integer[] r, Integer left, Integer right) {
         Integer i = 0, j = 0, k = 0;
         while (i < left && j < right) {
-            if (compare(leftmost, points, r[j], l[i])) {
+            if (compare(leftmost, points, r[j], l[i]) > 0) {
                 p[k++] = l[i++];
             } else {
                 p[k++] = r[j++];
@@ -179,7 +167,7 @@ public class Main {
         }
     }
 
-    public static void mergeSort(Integer leftmost, Integer[][] points, Integer[] p) {
+    public static void mergeSort(Integer leftmost, List<Point> points, Integer[] p) {
         int n = p.length;
         if (n < 2) {
             return;
@@ -199,14 +187,17 @@ public class Main {
         merge(leftmost, points, p, l, r, middle, n - middle);
     }
 
-    public static Integer rotate(Integer[] a, Integer[] b, Integer[] c) {
-        return (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+    public static Integer orient(Point a, Point b, Point c) {
+        int orientation = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
+        if (orientation == 0) return 0;
+        return orientation > 0 ? 1 : -1;
         // если > 0 значит с лежит слева от вектора ав
         // если < 0 значит с лежит справа от вектора ав
         // если = 0 значит с лежит на векторе ав
     }
 
-    public static List<Integer> graham(Integer[][] points, int start, int end) {
+    public static List<Integer> graham(List<Point> points, int start, int end) {
+
         Integer n = end - start + 1;
         Integer[] p = new Integer[n];
         for (int i = start; i <= end; i++) {
@@ -214,7 +205,7 @@ public class Main {
         }
         //searching for the leftmost point (point with lowest x)
         for (int i = 0; i < p.length; i++) {
-            if (points[p[i]][0] < points[p[0]][0]) {
+            if (points.get(p[i]).x > points.get(p[0]).x) {
                 Integer t = p[i];
                 p[i] = p[0];
                 p[0] = t;
@@ -227,8 +218,9 @@ public class Main {
         List<Integer> s = new ArrayList<>();
         s.add(leftmost);
         s.add(p[0]);
+
         for (int i = 1; i < p.length; i++) {
-            while (rotate(points[s.get(s.size() - 2)], points[s.get(s.size() - 1)], points[p[i]]) > 0) {
+            while (s.size() > 1 && orient(points.get(s.get(s.size() - 2)), points.get(s.get(s.size() - 1)), points.get(p[i])) >= 0) {
                 s.remove(s.size() - 1);
             }
             s.add(p[i]);
@@ -236,62 +228,4 @@ public class Main {
         return s;
     }
 
-//    public static int binarySearch(List<Integer> p, Integer[][] points, int l, int r, int leftmost, int left) {
-//        if (r >= l) {
-//            int mid = l + (r - l) / 2;
-//            if (!compare(left, points, mid, leftmost)) {
-//                leftmost = mid;
-//                return binarySearch(p, points, l, mid - 1, leftmost, left);
-//            }
-//            return binarySearch(p, points, mid + 1, r, leftmost, left);
-//        }
-//        return leftmost;
-//    }
-//
-//    public static List<Integer> jarvis(Integer[][] points, List<List<Integer>> pp) {
-//        int leftest = pp.get(0).get(0);
-//        int chosenone = 0;
-//        for (int i = 1; i < pp.size(); i++) {
-//            System.out.println(points[leftest][0] + " " + points[pp.get(i).get(0)][0]);
-//            if (points[leftest][0] > points[pp.get(i).get(0)][0]) {
-//                chosenone = i;
-//                leftest = pp.get(i).get(0);
-//            }
-//
-//        }
-//        System.out.println();
-//        System.out.println(chosenone);
-//        System.out.println();
-//        List<Integer> p = new ArrayList<>();
-//        Integer n = points.length;
-//        for (Integer i = 0; i < n; i++) {
-//            p.add(i);
-//        }
-//        for (Integer i = 0; i < n; i++) {
-//            if (points[p.get(i)][0] < points[p.get(0)][0]) {
-//                Integer t = p.get(i);
-//                p.set(i, p.get(0));
-//                p.set(0, t);
-//            }
-//        }
-//        List<Integer> hull = new ArrayList<>();
-//        hull.add(p.get(0));
-//        p.remove(0);
-//        p.add(hull.get(0));
-//        while (true) {
-//            int leftmost = 0;
-//            for (int i = 1; i < p.size(); i++) {
-//                if (rotate(points[hull.get(hull.size() - 1)], points[p.get(leftmost)], points[p.get(i)]) > 0) {
-//                    leftmost = i;
-//                }
-//            }
-//            if (p.get(leftmost) == (hull.get(0))) {
-//                break;
-//            } else {
-//                hull.add(p.get(leftmost));
-//                p.remove(leftmost);
-//            }
-//        }
-//        return hull;
-//    }
 }
