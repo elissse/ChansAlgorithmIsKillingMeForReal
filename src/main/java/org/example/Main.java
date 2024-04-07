@@ -31,7 +31,7 @@ public class Main {
         List<Point> points = bfcl.generatePoints();
         System.out.println(points.size());
         for (Point point : points) System.out.println(point);
-        List<Integer> hull = graham(points, 0, points.size() - 1);
+        List<Integer> hull = chans(points);
         for (Integer x : hull) System.out.println(x);
     }
 
@@ -54,7 +54,7 @@ public class Main {
             List<List<Integer>> miniHulls = new ArrayList<>();
             int m = min((int) pow(2, pow(2, t)), n);
             if (m < n) {
-                int r = (int) ceil(n / m);
+                int r = (int) ceil((double)n / m);
                 for (int i = 0; i < r; i++) {
                     miniHulls.add(figureOutStartAndEnd(points, i, m, r));
                 }
@@ -146,12 +146,11 @@ public class Main {
     }
 
     public static int compare(Integer leftmost, List<Point> points, Integer i, Integer j) {
-        int orientation = orient(points.get(leftmost), points.get(i), points.get(j));
-        return orientation;
+        return orient(points.get(leftmost), points.get(i), points.get(j));
     }
 
     public static void merge(Integer leftmost, List<Point> points, Integer[] p, Integer[] l, Integer[] r, Integer left, Integer right) {
-        Integer i = 0, j = 0, k = 0;
+        int i = 0, j = 0, k = 0;
         while (i < left && j < right) {
             if (compare(leftmost, points, r[j], l[i]) > 0) {
                 p[k++] = l[i++];
@@ -172,14 +171,14 @@ public class Main {
         if (n < 2) {
             return;
         }
-        Integer middle = n / 2;
+        int middle = n / 2;
         Integer[] l = new Integer[middle];
         Integer[] r = new Integer[n - middle];
 
         for (int i = 0; i < middle; i++) {
             l[i] = p[i];
         }
-        for (Integer i = middle; i < n; i++) {
+        for (int i = middle; i < n; i++) {
             r[i - middle] = p[i];
         }
         mergeSort(leftmost, points, l);
@@ -198,7 +197,7 @@ public class Main {
 
     public static List<Integer> graham(List<Point> points, int start, int end) {
 
-        Integer n = end - start + 1;
+        int n = end - start + 1;
         Integer[] p = new Integer[n];
         for (int i = start; i <= end; i++) {
             p[i - start] = i;
