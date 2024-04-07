@@ -33,31 +33,13 @@ public class BruteForceCollinearPoints {
     public List<Main.Point> generatePoints() {
         List<Main.Point> points = new ArrayList<>();
         Random random = new Random();
-//        int n = 3000;
-//        for (int i = 0; i < n; i++) {
-//            int x = random.nextInt(-100, 100);
-//            int y = random.nextInt(-100, 100);
-//            points.add(new Main.Point(x, y));
-//        }
-        points.add(new Main.Point(-5, 4));
-        points.add(new Main.Point(-4, -1));
-        points.add(new Main.Point(-4, -1));
-        points.add(new Main.Point(3, -4));
-        points.add(new Main.Point(-5, 4));
-        points.add(new Main.Point(-3, -4));
-        points.add(new Main.Point(-1, -3));
-        points.add(new Main.Point(1, 1));
-        points.add(new Main.Point(-5, 3));
-        points.add(new Main.Point(-4, -4));
-        points.add(new Main.Point(-1, -2));
-        points.add(new Main.Point(4, -5));
-        points.add(new Main.Point(-5, 1));
-        points.add(new Main.Point(3, 4));
-        points.add(new Main.Point(4, -1));
-        points.add(new Main.Point(-3, 3));
-        points.add(new Main.Point(0, 4));
-        points.add(new Main.Point(-5, -2));
-        points.add(new Main.Point(-1, 1));
+        int n = 3000;
+        for (int i = 0; i < n; i++) {
+            int x = random.nextInt(-100, 100);
+            int y = random.nextInt(-100, 100);
+            points.add(new Main.Point(x, y));
+        }
+
         deleteAllCollinear(points);
 
         return points;
