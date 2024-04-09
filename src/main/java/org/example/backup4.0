@@ -7,57 +7,37 @@ import java.util.List;
 import static java.lang.Math.*;
 
 public class Main {
-    public static final int LEFT_TURN = 1;
-    public static final int RIGHT_TURN = -1;
-    public static final int COLLINEAR = 0;
-
-    public static class Point {
-        public Integer x;
-        public Integer y;
-
-        Point(Integer x, Integer y) {
-            this.x = x;
-            this.y = y;
-        }
-
-        @Override
-        public String toString() {
-            return x + " " + y;
-        }
-    }
-
-    public static long iterations;
-    public static long start;
-    public static long end;
+    public static int LEFT_TURN = 1;
+    public static int RIGHT_TURN = -1;
+    public static int COLLINEAR = 0;
 
     public static void main(String[] args) {
-        Testing test = new Testing();
-        test.testing();
+        Integer[][] points = {{0, 5}, {6, -3}, {-5, -3}, {1, -1}, {4, -1}, {1, 1}, {0, 0}, {-1, 1}, {-3, -2}, {2, -2}};
+        List<Integer> hull = chans(points);
+        for (Integer x : hull) System.out.println(x);
     }
 
-    public static List<Integer> figureOutStartAndEnd(List<Point> points, int i, int m, int r) {
-        int start, end;
+    public static List<Integer> figureOutStartAndEnd(Integer[][] points, int i, int m, int r) {
+        int start = 0, end = 0;
         if (i != r - 1) {
             start = i * m;
             end = start + m - 1;
         } else {
-            end = points.size() - 1;
+            end = points.length - 1;
             start = end - m + 1;
         }
         return graham(points, start, end);
     }
 
-    public static List<Integer> chans(List<Point> points) {
-        int n = points.size();
+    public static List<Integer> chans(Integer[][] points) {
+        int n = points.length;
         List<Integer> hull = new ArrayList<>();
         for (int t = 1; t < n; t++) {
-            iterations++;
             List<List<Integer>> miniHulls = new ArrayList<>();
-            int m = min(1 << (1 << t), n);
-            if (m <= n) {
-                int r = (int) ceil((double) n / m);
+            int m = min((int) pow(2, pow(2, t)), n);
+            if (m < n) {
+                int r = (int) ceil(n / m);
                 for (int i = 0; i < r; i++) {
-                    iterations++;
                     miniHulls.add(figureOutStartAndEnd(points, i, m, r));
                 }
                 hull = jarvisMarch(points, miniHulls, m);
@@ -66,7 +46,7 @@ public class Main {
                     break;
                 }
             } else {
-                hull = graham(points, 0, points.size() - 1);
+                hull = graham(points, 0, points.length - 1);
             }
         }
         return hull;
@@ -77,17 +57,16 @@ public class Main {
         return (r >= 0) ? r : r + n;
     }
 
-    public static int tangent(int p, List<Point> points, List<Integer> miniHull) {
+    public static int tangent(int p, Integer[][] points, List<Integer> miniHull) {
         int l = 0;
         int r = miniHull.size() - 1;//is -1 needed here
-        int lBefore = orient(points.get(p), points.get(miniHull.get(0)), points.get(miniHull.get(miniHull.size() - 1)));
-        int lAfter = orient(points.get(p), points.get(miniHull.get(0)), points.get(miniHull.get((l + 1) % miniHull.size())));
+        int lBefore = orient(points[p], points[miniHull.get(0)], points[miniHull.get(miniHull.size() - 1)]);
+        int lAfter = orient(points[p], points[miniHull.get(0)], points[miniHull.get((l + 1) % miniHull.size())]);
         while (l < r) {
-            iterations++;
             int c = (l + r) / 2;
-            int cBefore = orient(points.get(p), points.get(miniHull.get(c)), points.get(miniHull.get(mod(c - 1, miniHull.size()))));
-            int cAfter = orient(points.get(p), points.get(miniHull.get(c)), points.get(miniHull.get((c + 1) % miniHull.size())));
-            int cSide = orient(points.get(p), points.get(miniHull.get(l)), points.get(miniHull.get(c)));
+            int cBefore = orient(points[p], points[miniHull.get(c)], points[miniHull.get(mod(c - 1, miniHull.size()))]);
+            int cAfter = orient(points[p], points[miniHull.get(c)], points[miniHull.get((c + 1) % miniHull.size())]);
+            int cSide = orient(points[p], points[miniHull.get(l)], points[miniHull.get(c)]);
             if (cBefore != RIGHT_TURN && cAfter != RIGHT_TURN) return c;
             else if (((cSide == LEFT_TURN) && (lAfter == RIGHT_TURN || lBefore == lAfter)) || (cSide == RIGHT_TURN && cBefore == RIGHT_TURN)) {
                 r = c;
@@ -95,25 +74,27 @@ public class Main {
                 l = c + 1;
             }
             lBefore = -cAfter;
-            lAfter = orient(points.get(p), points.get(miniHull.get(l)), points.get(miniHull.get((l + 1) % miniHull.size())));
+            lAfter = orient(points[p], points[miniHull.get(l)], points[miniHull.get((l + 1) % miniHull.size())]);
         }
         return l;
     }
 
-    public static List<Integer> jarvisMarch(List<Point> points, List<List<Integer>> miniHulls, int m) {
+    public static int findNext(Integer[][] points, Integer[] leftmost, int p) {
+        return 0;
+    }
+
+    public static List<Integer> jarvisMarch(Integer[][] points, List<List<Integer>> miniHulls, int m) {
         List<Integer> hull = new ArrayList<>();
         int leftessst = miniHulls.get(0).get(0);
         int whichHull = 0;
         int index = 0;
         for (int i = 1; i < miniHulls.size(); i++) {
-            for (int j = 0; j < miniHulls.get(i).size(); j++) {
-                iterations++;
-                if (points.get(leftessst).x < points.get(miniHulls.get(i).get(j)).x) {
+            for (int j = 0; j < miniHulls.get(i).size(); j++)
+                if (points[leftessst][0] < points[miniHulls.get(i).get(j)][0]) {
                     leftessst = miniHulls.get(i).get(j);
                     whichHull = i;
                     index = j;
                 }
-            }
         }
         hull.add(leftessst);
         miniHulls.get(whichHull).remove(index);
@@ -122,33 +103,26 @@ public class Main {
             Integer[] leftmost = new Integer[miniHulls.size()];
             Integer[] indexes = new Integer[miniHulls.size()];
             for (int h = 0; h < miniHulls.size(); h++) {
-                iterations++;
                 if (!miniHulls.get(h).isEmpty()) {
                     indexes[h] = tangent(hull.get(hull.size() - 1), points, miniHulls.get(h));
                     leftmost[h] = miniHulls.get(h).get(indexes[h]);
-                } else {
-                    indexes[h] = -1;
-                    leftmost[h] = 0;
                 }
             }
-
             leftessst = leftmost[0];
             whichHull = 0;
             index = indexes[0];
 
             for (int i = 1; i < leftmost.length; i++) {
-                iterations++;
-                if (indexes[i] != -1 && orient(points.get(hull.get(hull.size() - 1)), points.get(leftessst), points.get(leftmost[i])) == RIGHT_TURN) {
+                if (orient(points[hull.get(hull.size() - 1)], points[leftessst], points[leftmost[i]]) < 0) {
                     leftessst = leftmost[i];
                     whichHull = i;
                     index = indexes[i];
                 }
             }
-
-            if (index != -1 && miniHulls.get(whichHull).get(index).equals(hull.get(0))) {
+            if (miniHulls.get(whichHull).get(index).equals(hull.get(0))) {
                 hull.add(hull.get(0));
                 break;
-            } else if (index != -1) {
+            } else {
                 hull.add(leftessst);
                 miniHulls.get(whichHull).remove(index);
             }
@@ -156,45 +130,47 @@ public class Main {
         return hull;
     }
 
-    public static int compare(Integer leftmost, List<Point> points, Integer i, Integer j) {
-        return orient(points.get(leftmost), points.get(i), points.get(j));
+    public static int dist(Integer[] a, Integer[] b) {
+        return (a[0] - b[0]) * (a[0] - b[0]) - (a[1] - b[1]) * (a[1] - b[1]);
     }
 
-    public static void merge(Integer leftmost, List<Point> points, Integer[] p, Integer[] l, Integer[] r, Integer left, Integer right) {
-        int i = 0, j = 0, k = 0;
+    public static int compare(Integer leftmost, Integer[][] points, Integer i, Integer j) {
+        int orientation = orient(points[leftmost], points[i], points[j]);
+        if (orientation == 0)
+            return (dist(points[leftmost], points[i]) >= dist(points[leftmost], points[j])) ? 1 : -1;
+        return orientation;
+    }
+
+    public static void merge(Integer leftmost, Integer[][] points, Integer[] p, Integer[] l, Integer[] r, Integer left, Integer right) {
+        Integer i = 0, j = 0, k = 0;
         while (i < left && j < right) {
-            iterations++;
-            if (compare(leftmost, points, r[j], l[i]) == LEFT_TURN) {
+            if (compare(leftmost, points, r[j], l[i]) > 0) {
                 p[k++] = l[i++];
             } else {
                 p[k++] = r[j++];
             }
         }
         while (i < left) {
-            iterations++;
             p[k++] = l[i++];
         }
         while (j < right) {
-            iterations++;
             p[k++] = r[j++];
         }
     }
 
-    public static void mergeSort(Integer leftmost, List<Point> points, Integer[] p) {
+    public static void mergeSort(Integer leftmost, Integer[][] points, Integer[] p) {
         int n = p.length;
         if (n < 2) {
             return;
         }
-        int middle = n / 2;
+        Integer middle = n / 2;
         Integer[] l = new Integer[middle];
         Integer[] r = new Integer[n - middle];
 
         for (int i = 0; i < middle; i++) {
-            iterations++;
             l[i] = p[i];
         }
-        for (int i = middle; i < n; i++) {
-            iterations++;
+        for (Integer i = middle; i < n; i++) {
             r[i - middle] = p[i];
         }
         mergeSort(leftmost, points, l);
@@ -202,8 +178,8 @@ public class Main {
         merge(leftmost, points, p, l, r, middle, n - middle);
     }
 
-    public static Integer orient(Point a, Point b, Point c) {
-        int orientation = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
+    public static Integer orient(Integer[] a, Integer[] b, Integer[] c) {
+        int orientation = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
         if (orientation == 0) return 0;
         return orientation > 0 ? 1 : -1;
         // если > 0 значит с лежит слева от вектора ав
@@ -211,18 +187,15 @@ public class Main {
         // если = 0 значит с лежит на векторе ав
     }
 
-    public static List<Integer> graham(List<Point> points, int start, int end) {
-
-        int n = end - start + 1;
+    public static List<Integer> graham(Integer[][] points, int start, int end) {
+        Integer n = end - start + 1;
         Integer[] p = new Integer[n];
         for (int i = start; i <= end; i++) {
-            iterations++;
             p[i - start] = i;
         }
         //searching for the leftmost point (point with lowest x)
         for (int i = 0; i < p.length; i++) {
-            iterations++;
-            if (points.get(p[i]).x > points.get(p[0]).x) {
+            if (points[p[i]][0] > points[p[0]][0]) {
                 Integer t = p[i];
                 p[i] = p[0];
                 p[0] = t;
@@ -235,10 +208,8 @@ public class Main {
         List<Integer> s = new ArrayList<>();
         s.add(leftmost);
         s.add(p[0]);
-
         for (int i = 1; i < p.length; i++) {
-            while (s.size() > 1 && orient(points.get(s.get(s.size() - 2)), points.get(s.get(s.size() - 1)), points.get(p[i])) >= 0) {
-                iterations++;
+            while (orient(points[s.get(s.size() - 2)], points[s.get(s.size() - 1)], points[p[i]]) > 0) {
                 s.remove(s.size() - 1);
             }
             s.add(p[i]);

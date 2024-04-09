@@ -30,10 +30,27 @@ public class BruteForceCollinearPoints {
         }
     }
 
+    public int quadraticPolynomial(int a, int b, int c, int x, int n) {
+        return Main.mod(Main.mod(Main.mod(a * x, n) * x, n) + Main.mod(b * x, n) + c, n);
+    }
+
+    public List<Main.Point> notDumb(int n) {
+        List<Main.Point> points = new ArrayList<>();
+        Random random = new Random();
+        int a = random.nextInt(-100, 100);
+        int b = random.nextInt(-100, 100);
+        int c = random.nextInt(-100, 100);
+        for (int x = 0; x < n; x++) {
+            int y = Main.mod(quadraticPolynomial(a, b, c, x, n), n);
+            points.add(new Main.Point(x, y));
+        }
+        return points;
+    }
+
     public List<Main.Point> generatePoints() {
         List<Main.Point> points = new ArrayList<>();
         Random random = new Random();
-        int n = 3000;
+        int n = 500;
         for (int i = 0; i < n; i++) {
             int x = random.nextInt(-100, 100);
             int y = random.nextInt(-100, 100);
